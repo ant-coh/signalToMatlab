@@ -16,6 +16,7 @@ function [selectedMEPs, selectedIdx] = selectingMEP(allMEP, t)
     hLines = plot(ax, t', allMEP);
     xlabel(ax, 'Time (ms)');
     ylabel(ax, 'Amplitude (V)');
+    xline(ax, 0, 'r--', 'Stimulation', 'LabelHorizontalAlignment', 'left')
     title(ax, 'Select MEPs using checkboxes');
 
     % Create checkbox panel (empty)
