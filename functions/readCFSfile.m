@@ -31,6 +31,10 @@ for j=1:channels
     for i=1:length(dsVec)
        [startOffset,points,yScale,yOffset,xScale,xOffset]=matcfs64c('cfsGetDSChan',fhandle,j-1,dsVec(i));
 
+        if startsWith(channelName,"ADC") && i==1
+            stim_offset=xOffset;                                            % to check potential offset with EMG
+        end
+        
         if i==1
             DataExtract.(channelName).dat = [] ;
             DataExtract.(channelName).FreqS = 1/xScale ;
@@ -41,8 +45,20 @@ for j=1:channels
             [data]=matcfs64c('cfsGetChanData',fhandle,j-1,dsVec(i),startPt,points,dataType);
             data=(data*yScale)+yOffset;
 
+            if startsWith(channelName,"EMG")                                % x offset correction
+                nb_frm_offset=round((stim_offset-xOffset)/xScale);
+                if nb_frm_offset~=0
+                    frm_offset=zeros(abs(nb_frm_offset),1);
+                    if nb_frm_offset<0
+                        data=[frm_offset ; data];
+                    else
+                        data=[data ; frm_offset];
+                    end
+                end
+            end
+
             DataExtract.(channelName).dat = [ DataExtract.(channelName).dat ; data ] ;
         end
-    end 
+    end
 end
 ret=matcfs64c('cfsCloseFile',fhandle); % close the file
