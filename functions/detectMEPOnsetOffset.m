@@ -67,7 +67,7 @@ iEmg = find(startsWith(flds1, EMGPrefix), 1, 'first');
 if isempty(iEmg)
     error('No %s* field found in %s.', EMGPrefix, firstLab);
 end
-nSamp = numel(MEP.(firstLab).(flds1{iEmg}));
+nSamp = numel(MEP.(firstLab).(flds1{iEmg})); % nb of points
 
 if isempty(time)
     % If no time vector provided, try MEP.Meta.Time_ms
@@ -94,9 +94,9 @@ if isempty(stimIdx0)
 end
 
 % ---------- Pre-computations related to Fs ----------
-N_rms      = max(1, round(P.rms_ms      * Fs / 1000));
-N_hold_on  = max(1, round(P.hold_on_ms  * Fs / 1000));
-N_hold_off = max(1, round(P.hold_off_ms * Fs / 1000));
+N_rms      = max(1, round(P.rms_ms      * Fs / 1000)); % nb of points for RMS window
+N_hold_on  = max(1, round(P.hold_on_ms  * Fs / 1000)); % nb of consecutive points > threshold_on
+N_hold_off = max(1, round(P.hold_off_ms * Fs / 1000)); % IDEM for threshold_off
 
 bIdx = (time >= P.base_ms(1))  & (time <= P.base_ms(2)); % baseline indices
 sIdx = (time >= P.search_ms(1))& (time <= P.search_ms(2)); % search indices
@@ -110,7 +110,7 @@ Summ = struct('Label',{},'On_ms',{},'Off_ms',{},'Latency_ms',{}, ...
               'ThrOn',{},'ThrOff',{});
 
 for k = 1:numel(names)
-    lab = names{k};
+    lab = names{k}; % ex: 'MEP_01'
     flds = fieldnames(MEP.(lab));
     emgField = '';
     for f = 1:numel(flds)
@@ -123,7 +123,7 @@ for k = 1:numel(names)
         continue
     end
 
-    sig = MEP.(lab).(emgField)(:);
+    sig = MEP.(lab).(emgField)(:); % raw EMG signal
 
     % 1) RMS envelope
     env = sqrt(movmean(sig.^2, N_rms));
@@ -134,12 +134,37 @@ for k = 1:numel(names)
     thr_on  = mu + P.k_on  * sd;
     thr_off = mu + P.k_off * sd;
 
-    % 3) Onset detection
-    env_s  = env(sIdx);
-    s_ofs  = find(sIdx,1,'first')-1;
-    on_rel = firstRun(env_s > thr_on, N_hold_on);
-    if ~isempty(on_rel)
-        idx_on = s_ofs + on_rel;
+    % 3) Onset detection (choix du plus gros burst au-dessus du seuil)
+    env_s = env(sIdx);                         % enveloppe dans la fenêtre de recherche
+    s_ofs = find(sIdx, 1, 'first') - 1;        % offset pour revenir aux indices globaux
+
+    logic = env_s > thr_on;                    % points au-dessus du seuil onset
+
+    if any(logic)
+        % Détection de tous les runs consécutifs au-dessus du seuil
+        d = diff([false; logic(:); false]);
+        starts_all = find(d == 1);
+        ends_all   = find(d == -1) - 1;
+        lens       = ends_all - starts_all + 1;
+
+        % On garde seulement les runs qui durent au moins N_hold_on échantillons
+        valid = lens >= N_hold_on;
+        starts = starts_all(valid);
+        ends   = ends_all(valid);
+
+        if isempty(starts)
+            idx_on = NaN;
+        else
+            % Pour chaque run, on calcule le pic de l'enveloppe RMS
+            peakVals = arrayfun(@(a,b) max(env_s(a:b)), starts, ends);
+
+            % On choisit le run ayant le pic maximal = "vrai" MEP
+            [~, iBest] = max(peakVals);
+            on_rel = starts(iBest);
+
+            % Conversion en index global
+            idx_on = s_ofs + on_rel;
+        end
     else
         idx_on = NaN;
     end
