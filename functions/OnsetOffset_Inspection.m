@@ -13,30 +13,32 @@ xline2 = gobjects(nb_mep,1);
 sliderLabel1 = gobjects(nb_mep,1);
 sliderLabel2 = gobjects(nb_mep,1);
 decal = 40;                                                                 % Used to align sliders with the axes
+modifmax=50;                                                                % Maximum manual offset
 
 axesPos = [20 150 680 400];
 
     for k = 1:nb_mep
         ax = uiaxes(fig,'Position',axesPos,'Visible','off');
+        ax.Box = 'on';
         axesArray(k) = ax;
 
         x = MEP.Meta.Time_ms;
         y = MEP.(['MEP_' num2str(k,'%02d')]).Enveloppe;
-        plotsArray(k) = plot(ax,x,y,'Visible','off');
-        ax.XLim = [min(x) max(x)];
+        plotsArray(k) = plot(ax,x,y,'Visible','off','Color','k','LineWidth',1);
+        ax.XLim = [min(x) 400];
 
         xlabel(ax,'Time (ms)');
         ylabel(ax,'RMS Enveloppe (V)');
         title(ax,sprintf('MEP %d',k));
 
         % xlines - onset & offset
-        xline1(k) = xline(ax, MEP.Meta.OnOff_ms(k,1), 'Color', 'r', 'LineWidth', 2, 'LineStyle', '--', 'Visible', 'off');
-        xline2(k) = xline(ax, MEP.Meta.OnOff_ms(k,2), 'Color', 'r', 'LineWidth', 2, 'LineStyle', '--', 'Visible', 'off');
+        xline1(k) = xline(ax, MEP.Meta.OnOff_ms(k,1), 'Color', 'b', 'LineWidth', 1.7, 'LineStyle', '--', 'Visible', 'off');
+        xline2(k) = xline(ax, MEP.Meta.OnOff_ms(k,2), 'Color', 'm', 'LineWidth', 1.7, 'LineStyle', '--', 'Visible', 'off');
 
         % Slider 1 (Onset)
         slider1(k) = uislider(fig, ...
             'Position',[axesPos(1)+decal 100 axesPos(3)-decal 3], ...
-            'Limits',[min(x) max(x)], ...
+            'Limits',[MEP.Meta.OnOff_ms(k,1)-modifmax MEP.Meta.OnOff_ms(k,1)+modifmax], ...
             'Value',MEP.Meta.OnOff_ms(k,1), ...
             'Visible','off');
         slider1(k).ValueChangingFcn = @(s,e) updateXline1(k,e.Value);
@@ -44,15 +46,13 @@ axesPos = [20 150 680 400];
         % Slider 2 (Offset)
         slider2(k) = uislider(fig, ...
             'Position',[axesPos(1)+decal 60 axesPos(3)-decal 3], ...
-            'Limits',[min(x) max(x)], ...
+            'Limits',[MEP.Meta.OnOff_ms(k,2)-modifmax MEP.Meta.OnOff_ms(k,2)+modifmax], ...
             'Value',MEP.Meta.OnOff_ms(k,2), ...
             'Visible','off');
         slider2(k).ValueChangingFcn = @(s,e) updateXline2(k,e.Value);
 
-        sliderLabel1(k) = uilabel(fig,'Text','Onset','Position',[axesPos(1)+decal 110 50 20],'FontWeight','bold','Visible','off');
-        sliderLabel2(k) = uilabel(fig,'Text','Offset','Position',[axesPos(1)+decal 35 50 20],'FontWeight','bold','Visible','off');
-        slider2(k).MajorTicks = [];
-        slider2(k).MinorTicks = [];
+        sliderLabel1(k) = uilabel(fig,'Text','Onset','Position',[axesPos(1) 92 50 20],'FontWeight','bold','Visible','off','FontColor','b');
+        sliderLabel2(k) = uilabel(fig,'Text','Offset','Position',[axesPos(1) 52 50 20],'FontWeight','bold','Visible','off','FontColor','m');
 
     end
 
@@ -123,12 +123,16 @@ axesPos = [20 150 680 400];
     end
 
     function finishCallback()
-        positions = zeros(n,2);
+        positions = zeros(nb_mep,2);
+        positions_idx = zeros(nb_mep,2);
         MEPnew=MEP;
         for i = 1:nb_mep
             positions(i,1) = xline1(i).Value;
             positions(i,2) = xline2(i).Value;
+            positions_idx(i,1) = find(abs(x - xline1(i).Value) == min(abs(x - xline1(i).Value)), 1);
+            positions_idx(i,2) = find(abs(x - xline2(i).Value) == min(abs(x - xline2(i).Value)), 1);
             MEPnew.(['MEP_' num2str(i,'%02d')]).OnOff_ms=positions(i,:);
+            MEPnew.(['MEP_' num2str(i,'%02d')]).OnOff_idx=positions_idx(i,:);
         end
         MEPnew.Meta.OnOff_ms=positions;
         uiresume(fig);
