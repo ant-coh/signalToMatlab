@@ -180,23 +180,15 @@ for k = 1:numel(names)
     end
 
     % 5) Silent period detection
-    idx_sp = NaN;
-    idx_poff = NaN;
-    if ~isnan(idx_off)
-        env_post = env(idx_off:end);
-        poff_rel = firstRun(env_post < thr_sp, 0);                          % First index post-offset below the sp threshold
-        if ~isempty(poff_rel)
-            idx_poff = idx_off + poff_rel - 1;
-        end
-    end
+
+    env_post = env(idx_off:end);
+    poff_rel = firstRun(env_post < thr_sp, 0);                              % First index post-offset below the sp threshold
+    idx_poff = idx_off + poff_rel - 1;
+
     decal=100;                                                              % Right offset to avoid values above threshold post-MEP
-    if ~isnan(idx_poff)
-        env_sp = env(idx_off+decal:end);
-        sp_rel = firstRun(env_sp > thr_sp, 0);                              % First index above threshold
-        if ~isempty(sp_rel)
-            idx_sp = idx_poff + decal + sp_rel -1;
-        end
-    end
+    env_sp = env(idx_off+decal:end);
+    sp_rel = firstRun(env_sp > thr_sp, 0);                                  % First index above threshold
+    idx_sp = idx_poff + decal + sp_rel -1;
 
     % 6) Save results (ms / idx / metrics)
     on_ms  = NaN; off_ms = NaN;
