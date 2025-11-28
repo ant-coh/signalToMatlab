@@ -192,6 +192,7 @@ for k = 1:numel(names)
     MEP.(lab).Thresholds.on  = thr_on;
     MEP.(lab).Thresholds.off = thr_off;
     MEP.(lab).Latency_ms     = lat_ms;
+    MEP.(lab).Enveloppe      = env;
 
     if ~isnan(idx_on) && ~isnan(idx_off) && idx_off > idx_on
         seg = sig(idx_on:idx_off);
@@ -224,17 +225,17 @@ for k = 1:numel(names)
     Summ(k).ThrOff      = thr_off;
 
     % 6) Debug plot
-    if P.debug_plots
-        figure('Color','w');
-        plot(time, env, 'LineWidth',1.2); hold on; grid on
-        yline(thr_on,'--','OnThr'); yline(thr_off,':','OffThr');
-        xline(P.base_ms(1),'k:'); xline(P.base_ms(2),'k:');
-        xline(P.search_ms(1),'m:'); xline(P.search_ms(2),'m:');
-        if ~isnan(idx_on),  xline(time(idx_on),'g-','Onset'); end
-        if ~isnan(idx_off), xline(time(idx_off),'r-','Offset'); end
-        title(sprintf('%s — RMS env & thresholds', lab), 'Interpreter', 'none');
-        xlabel('Time (ms)'); ylabel('RMS envelope (a.u.)');
-    end
+    % if P.debug_plots
+    %     figure('Color','w');
+    %     plot(time, env, 'LineWidth',1.2); hold on; grid on
+    %     yline(thr_on,'--','OnThr'); yline(thr_off,':','OffThr');
+    %     xline(P.base_ms(1),'k:'); xline(P.base_ms(2),'k:');
+    %     xline(P.search_ms(1),'m:'); xline(P.search_ms(2),'m:');
+    %     if ~isnan(idx_on),  xline(time(idx_on),'g-','Onset'); end
+    %     if ~isnan(idx_off), xline(time(idx_off),'r-','Offset'); end
+    %     title(sprintf('%s — RMS env & thresholds', lab), 'Interpreter', 'none');
+    %     xlabel('Time (ms)'); ylabel('RMS envelope (a.u.)');
+    % end
 end
 
 % ---------- Save Meta & Summary ----------
