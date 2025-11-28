@@ -10,6 +10,8 @@ slider1 = gobjects(nb_mep,1);
 slider2 = gobjects(nb_mep,1);
 xline1 = gobjects(nb_mep,1);
 xline2 = gobjects(nb_mep,1);
+yline1 = gobjects(nb_mep,1);
+yline2 = gobjects(nb_mep,1);
 sliderLabel1 = gobjects(nb_mep,1);
 sliderLabel2 = gobjects(nb_mep,1);
 decal = 40;                                                                 % Used to align sliders with the axes
@@ -34,6 +36,9 @@ axesPos = [20 150 680 400];
         % xlines - onset & offset
         xline1(k) = xline(ax, MEP.Meta.OnOff_ms(k,1), 'Color', 'b', 'LineWidth', 1.7, 'LineStyle', '--', 'Visible', 'off');
         xline2(k) = xline(ax, MEP.Meta.OnOff_ms(k,2), 'Color', 'm', 'LineWidth', 1.7, 'LineStyle', '--', 'Visible', 'off');
+        % ylines - onset & offset thresholds
+        yline1(k) = yline(ax, MEP.(['MEP_' num2str(k,'%02d')]).Thresholds.on, 'Color', 'b', 'LineWidth', .7, 'LineStyle', '--', 'Visible', 'off');
+        yline2(k) = yline(ax, MEP.(['MEP_' num2str(k,'%02d')]).Thresholds.off, 'Color', 'm', 'LineWidth', .7, 'LineStyle', '--', 'Visible', 'off');
 
         % Slider 1 (Onset)
         slider1(k) = uislider(fig, ...
@@ -88,6 +93,8 @@ axesPos = [20 150 680 400];
         slider2(idx).Visible = 'off';
         xline1(idx).Visible = 'off';
         xline2(idx).Visible = 'off';
+        yline1(idx).Visible = 'off';
+        yline2(idx).Visible = 'off';
         sliderLabel1(idx).Visible = 'off';
         sliderLabel2(idx).Visible = 'off';
     end
@@ -99,6 +106,8 @@ axesPos = [20 150 680 400];
         slider2(idx).Visible = 'on';
         xline1(idx).Visible = 'on';
         xline2(idx).Visible = 'on';
+        yline1(idx).Visible = 'on';
+        yline2(idx).Visible = 'on';
         sliderLabel1(idx).Visible = 'on';
         sliderLabel2(idx).Visible = 'on';
 
