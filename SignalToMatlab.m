@@ -129,43 +129,48 @@ freq_stim = data.ADC0.FreqS;
 
 fprintf('OK — EMG filtered (20–1000 Hz, Fs=%.1f Hz). Stim loaded (Fs=%.1f Hz).\n', freq_EMG, freq_stim);
 
-%% Match sampling rates (resample stim to EMG rate)
-% Target sampling frequency = EMG sampling rate = freq_EMG
+%% Detect stimulation times and match sampling rates
+% Resamples per frame (not globally) to avoid accumulating drift caused by the difference in sampling frequencies
 
-% end_time_EMG = length(EMG) * (1/freq_EMG);
-% time_EMG = linspace(0, end_time_EMG, length(EMG));
-% new_time_EMG = 0:(1/freq_EMG):end_time_EMG-1;
-
-end_time_stim = length(stim)*(1/freq_stim);
-time_stim = linspace(0, end_time_stim, length(stim));   % actual time vector of the recorder stim
-new_time_stim = (0:length(EMG)-1) / freq_EMG;           % new time vector of the stim matching the frequency of the EMG
-
-% Interpolation stim onto the EMG time base
-new_stim = interp1(time_stim, stim, new_time_stim, 'linear');
-
-%% Detect stimulation times
-
-Thr = 0.1*max(new_stim); % threshold: stim signal above 10% of max voltage
-                                                                            % Indices of detected stim events
-listOfStim=(new_stim>Thr);                                                  % Values above threshold
-listOfStim=find(diff(listOfStim)==1)+1;                                     % Rising edges
-
-fprintf('OK — Stim detection completed.\n')
-
-% Map each detected stim to its originating frame using the EMG sample counts.
-if isfield(data,EMG_field) && isfield(data.(EMG_field),'PointsPerFrame')
-    frameBoundaries = cumsum(data.(EMG_field).PointsPerFrame);
-    stimFrameIdx = nan(size(listOfStim));
-    for t = 1:numel(listOfStim)
-        f = find(listOfStim(t) <= frameBoundaries, 1, 'first');
-        if isempty(f)
-            f = numel(frameBoundaries);
-        end
-        stimFrameIdx(t) = f;
-    end
-else
-    stimFrameIdx = [];
+if isfield(data.ADC0,'PointsPerFrame')
+    stimPointsPerFrame = data.ADC0.PointsPerFrame;
+elseif isfield(data,'DataSections')
+    nSectionsFallback = data.DataSections;
+    stimPointsPerFrame = repmat(length(stim)/nSectionsFallback, nSectionsFallback, 1);
 end
+
+emgPointsPerFrame = data.(EMG_field).PointsPerFrame;
+emgFrameBoundaries = cumsum(emgPointsPerFrame);
+emgFrameStartIdx = [0;emgFrameBoundaries(1:end-1)]+1;
+stimFrameBoundaries = cumsum(stimPointsPerFrame);
+stimFrameStartIdx = [0;stimFrameBoundaries(1:end-1)]+1;
+
+nSections = numel(emgPointsPerFrame);
+Thr = 0.1*max(stim);                                                        % threshold: stim signal above 10% of max voltage
+
+listOfStim = [];
+stimFrameIdx = [];
+for f = 1:nSections
+    emgLocalLen = emgPointsPerFrame(f);
+    stimLocal = stim(stimFrameStartIdx(f):stimFrameBoundaries(f));
+
+    time_stim_local = (0:numel(stimLocal)-1) / freq_stim;                   % local time base of this section's stim
+    new_time_stim_local = (0:emgLocalLen-1) / freq_EMG;                     % local time base of this section's EMG
+
+    new_stim_local = interp1(time_stim_local, stimLocal, new_time_stim_local, 'linear');
+
+    logic = new_stim_local > Thr;                                           % values above threshold
+    localStims = find(diff(logic)==1) + 1;                                  % rising edges, local to this section
+
+    if ~isempty(localStims)
+        globalStims = localStims + emgFrameStartIdx(f) - 1;                 % back to global EMG sample index
+        listOfStim = [listOfStim, globalStims]; %#ok<AGROW>
+        stimFrameIdx = [stimFrameIdx, repmat(f, 1, numel(globalStims))]; %#ok<AGROW>
+    end
+end
+
+fprintf('OK — Stim detection completed (per-section resampling, %d sections, %d stims detected).\n', ...
+    nSections, numel(listOfStim));
 
 %% Match Brainsight neuronavigation errors
 
@@ -274,7 +279,7 @@ for t = 1:length(listOfStim)
     end
 
     wdw = [minus, plus];            % time indexes of the window around the stim
-    MEPWindows = [MEPWindows; wdw]; % collect windows
+    MEPWindows = [MEPWindows; wdw]; %#ok<AGROW>
 end
 fprintf('OK — MEP windows created.\n')
 
