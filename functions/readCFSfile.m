@@ -57,7 +57,7 @@ for j=1:channels
         if i==1
             DataExtract.(channelName).dat = [] ;
             DataExtract.(channelName).FreqS = 1/xScale ;
-            if startsWith(channelName,"EMG")
+            if startsWith(channelName,"EMG") || startsWith(channelName,"ADC0")
                 DataExtract.(channelName).PointsPerFrame = zeros(dataSections,1);
             end
         end
@@ -69,16 +69,18 @@ for j=1:channels
 
             if startsWith(channelName,"EMG")                                % x offset correction
                 nb_frm_offset=round((stim_offset-xOffset)/xScale);
-                if nb_frm_offset~=0
+                if nb_frm_offset<0                                          % If the EMG frame starts later than the stim, pad with zeros to realign
                     frm_offset=zeros(abs(nb_frm_offset),1);
-                    if nb_frm_offset<0
-                        data=[frm_offset ; data];
-                    else
-                        data=[data ; frm_offset];
-                    end
+                    data=[frm_offset ; data];
+                elseif nb_frm_offset>0                                      % If the EMG frame starts earlier than the stim, trim to realign
+                    data=data(nb_frm_offset+1:end);
                 end
-                % Number of samples this frame contributes to the concatenated vector.
-                % Used later to map a sample index back to its frame of origin.
+            end
+
+            if startsWith(channelName,"EMG") || startsWith(channelName,"ADC0")
+                % Number of samples this frame contributes to the concatenated
+                % vector. Used later to map a sample index back to its frame of
+                % origin, and to resample stim/EMG one section at a time.
                 DataExtract.(channelName).PointsPerFrame(i) = numel(data);
             end
 
