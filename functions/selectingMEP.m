@@ -52,7 +52,7 @@ hold(ax, 'on');
 hLines=plot(ax,t',allMEP);
 xlabel(ax,'Time (ms)')
 ylabel(ax,'Amplitude (V)')
-xline(ax,0,'r--','Stimulation');
+xline(ax,0,'r--','Stimulation','LabelHorizontalAlignment','left');
 title(ax, 'MEP Selection');
 
 fitYCheckbox.ValueChangedFcn = @(src,evt)toggleYFitWindow(src,f,ax,hLines);
