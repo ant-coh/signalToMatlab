@@ -77,7 +77,7 @@ btnX = axesPos(1)+axesPos(3)+30;
         end
 
         % xlines - stim, onset, offset & silent period
-        xline0(k) = xline(ax, 0, 'Color', 'r', 'LineWidth', 1.5, 'LineStyle', ':', 'Visible', 'off');
+        xline0(k) = xline(ax, 0, 'Color', 'r', 'LineWidth', 1.5, 'LineStyle', ':', 'Label', 'Stimulation', 'LabelHorizontalAlignment', 'left', 'Visible', 'off');
         xline1(k) = xline(ax, onset, 'Color', '#6B43E5', 'LineWidth', 1.7, 'LineStyle', '--', 'Visible', 'off');
         xline2(k) = xline(ax, offset, 'Color', '#E54379', 'LineWidth', 1.7, 'LineStyle', '--', 'Visible', 'off');
         xline3(k) = xline(ax, sp, 'Color', '#AA50DE', 'LineWidth', 1.7, 'LineStyle', '--', 'Visible', 'off');
