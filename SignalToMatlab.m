@@ -8,6 +8,11 @@
                                        'readCFSfile.m'
     Note: this function does not work on macOS.
 
+    If exactly one Brainsight .txt export (which may contain stimulations
+    distributed across different .mat files) is found alongside the .mat 
+    file, neuronavigation errors will be displayed in the MEP selection UI 
+    and exported to the final .mat and .csv files.
+
     * * * * *
 
     If you run into any issue, please contact me.
