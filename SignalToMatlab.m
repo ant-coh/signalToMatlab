@@ -361,6 +361,11 @@ if any(validMatch)
     MEP = attachBrainsightErrors(MEP, matchedRows, BrainsightTable);
 end
 
+% Attach the EMG channels that were not analysed (MEP.MEP_XX.EMG_add.EMG_xx).
+if nb_EMGs > 1
+    MEP = attachAdditionalEMGs(MEP, data, selected_EMGs, EMG_field, MEPWindows, freq_EMG);
+end
+
 %% Structure export
 
 [~, baseMatName] = fileparts(char(str_file));  % get .mat file name without extension
